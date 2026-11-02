@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simple Free Browser</title>
+  <title>Enhanced Mini Browser</title>
   <style>
     body, html {
       height: 100%;
@@ -16,6 +16,7 @@
       display: flex;
       padding: 8px;
       background: #2c3e50;
+      align-items: center;
     }
     #url {
       flex: 1;
@@ -25,17 +26,22 @@
       border-radius: 4px 0 0 4px;
       outline: none;
     }
-    #go-btn {
-      padding: 6px 15px;
+    button {
+      margin-left: 4px;
+      padding: 6px 12px;
       border: none;
       background-color: #3498db;
       color: white;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 0 4px 4px 0;
+      border-radius: 4px;
       transition: background-color 0.3s ease;
     }
-    #go-btn:hover {
+    button:disabled {
+      background-color: #7f8c8d;
+      cursor: default;
+    }
+    button:hover:not(:disabled) {
       background-color: #2980b9;
     }
     #browser-frame {
@@ -43,38 +49,163 @@
       border: none;
       width: 100%;
     }
+    #loading {
+      position: absolute;
+      top: 45px;
+      right: 15px;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #container {
+      position: relative;
+      flex: 1;
+      height: 100%;
+    }
   </style>
 </head>
 <body>
   <div id="address-bar">
-    <input type="text" id="url" placeholder="Enter URL (e.g. https://example.com)" />
+    <button id="back-btn" disabled>&lt; Back</button>
+    <button id="forward-btn" disabled>Forward &gt;</button>
+    <button id="reload-btn">&#x21bb;</button>
+    <button id="home-btn">Home</button>
+    <input type="text" id="url" placeholder="Enter URL or search" />
     <button id="go-btn">Go</button>
+    <div id="loading"></div>
   </div>
-  <iframe id="browser-frame" src="about:blank"></iframe>
+  <div id="container">
+    <iframe id="browser-frame" src="about:blank"></iframe>
+  </div>
 
   <script>
     const urlInput = document.getElementById('url');
     const goBtn = document.getElementById('go-btn');
     const browserFrame = document.getElementById('browser-frame');
+    const loading = document.getElementById('loading');
+    const backBtn = document.getElementById('back-btn');
+    const forwardBtn = document.getElementById('forward-btn');
+    const reloadBtn = document.getElementById('reload-btn');
+    const homeBtn = document.getElementById('home-btn');
 
-    function navigate() {
-      let url = urlInput.value.trim();
-      if (!url) return;
+    const homePage = 'https://www.google.com';
+    let historyStack = [];
+    let currentIndex = -1;
 
-      // Add http:// if missing for convenience
-      if (!url.match(/^https?:\/\//)) {
-        url = 'http://' + url;
+    function isValidUrl(str) {
+      try {
+        new URL(str);
+        return true;
+      } catch {
+        return false;
       }
-
-      browserFrame.src = url;
     }
 
-    goBtn.addEventListener('click', navigate);
-    urlInput.addEventListener('keyup', function(event) {
+    function processInput(input) {
+      input = input.trim();
+      if (!input) return null;
+
+      // If input looks like URL without protocol, add https
+      if (!input.match(/^https?:\/\//)) {
+        if (input.includes(' ')) {
+          // Has space, treat as search
+          return `https://www.google.com/search?q=${encodeURIComponent(input)}`;
+        }
+        if (/\./.test(input)) {
+          // Looks like domain, add https
+          return `https://${input}`;
+        }
+        // No dot, treat as search
+        return `https://www.google.com/search?q=${encodeURIComponent(input)}`;
+      }
+
+      return input; // Full URL
+    }
+
+    function navigate(inputUrl, pushHistory = true) {
+      const url = processInput(inputUrl);
+      if (!url) return;
+
+      browserFrame.src = url;
+      urlInput.value = url;
+
+      if (pushHistory) {
+        // If not at the top of history stack (after going back), remove forward history
+        if (currentIndex < historyStack.length - 1) {
+          historyStack = historyStack.slice(0, currentIndex + 1);
+        }
+        historyStack.push(url);
+        currentIndex++;
+      }
+
+      updateButtons();
+      showLoading(true);
+    }
+
+    function updateButtons() {
+      backBtn.disabled = currentIndex <= 0;
+      forwardBtn.disabled = currentIndex >= historyStack.length - 1;
+    }
+
+    function showLoading(isLoading) {
+      loading.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    goBtn.addEventListener('click', () => {
+      navigate(urlInput.value);
+    });
+
+    urlInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter') {
-        navigate();
+        navigate(urlInput.value);
       }
     });
+
+    backBtn.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        browserFrame.src = historyStack[currentIndex];
+        urlInput.value = historyStack[currentIndex];
+        updateButtons();
+        showLoading(true);
+      }
+    });
+
+    forwardBtn.addEventListener('click', () => {
+      if (currentIndex < historyStack.length - 1) {
+        currentIndex++;
+        browserFrame.src = historyStack[currentIndex];
+        urlInput.value = historyStack[currentIndex];
+        updateButtons();
+        showLoading(true);
+      }
+    });
+
+    reloadBtn.addEventListener('click', () => {
+      if (currentIndex >= 0) {
+        browserFrame.src = historyStack[currentIndex];
+        showLoading(true);
+      }
+    });
+
+    homeBtn.addEventListener('click', () => {
+      navigate(homePage);
+    });
+
+    browserFrame.addEventListener('load', () => {
+      showLoading(false);
+    });
+
+    // Start on home page
+    navigate(homePage);
   </script>
 </body>
 </html>
