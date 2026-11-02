@@ -1,162 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Guest Wi-Fi Access</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Free Browser</title>
   <style>
-    * {
-      box-sizing: border-box;
+    body, html {
+      height: 100%;
       margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    body {
-      background: #f4f7f6;
+      font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+      flex-direction: column;
     }
-    .portal-card {
-      background: #ffffff;
-      width: 100%;
-      max-width: 400px;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      text-align: center;
+    #address-bar {
+      display: flex;
+      padding: 8px;
+      background: #2c3e50;
     }
-    .wifi-icon {
-      width: 50px;
-      height: 50px;
-      fill: #0066ff;
-      margin-bottom: 15px;
-    }
-    h1 {
-      font-size: 22px;
-      color: #333;
-      margin-bottom: 8px;
-    }
-    p {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-    .form-group {
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #444;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-    }
-    input[type="text"],
-    input[type="email"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
+    #url {
+      flex: 1;
+      padding: 6px 10px;
+      border: none;
+      font-size: 16px;
+      border-radius: 4px 0 0 4px;
       outline: none;
     }
-    input[type="text"]:focus,
-    input[type="email"]:focus {
-      border-color: #0066ff;
-    }
-    .terms {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      color: #555;
-      text-align: left;
-    }
-    .btn-connect {
-      width: 100%;
-      padding: 14px;
-      background: #0066ff;
-      color: #fff;
+    #go-btn {
+      padding: 6px 15px;
       border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: 600;
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
-      transition: background 0.2s;
+      border-radius: 0 4px 4px 0;
+      transition: background-color 0.3s ease;
     }
-    .btn-connect:hover {
-      background: #0052cc;
+    #go-btn:hover {
+      background-color: #2980b9;
     }
-    .status-msg {
-      margin-top: 15px;
-      font-size: 14px;
-      font-weight: 600;
+    #browser-frame {
+      flex: 1;
+      border: none;
+      width: 100%;
     }
-    .status-msg.success { color: #2e7d32; }
-    .status-msg.error { color: #d32f2f; }
   </style>
 </head>
 <body>
-
-  <div class="portal-card">
-    <svg class="wifi-icon" viewBox="0 0 24 24">
-      <path d="M12 3C7.95 3 4.21 4.64 1.41 7.31L3 8.9C5.38 6.64 8.54 5.25 12 5.25C15.46 5.25 18.62 6.64 21 8.9L22.59 7.31C19.79 4.64 16.05 3 12 3ZM12 9C9.3 9 6.81 10.09 4.95 11.87L6.54 13.46C7.97 12.09 9.89 11.25 12 11.25C14.11 11.25 16.03 12.09 17.46 13.46L19.05 11.87C17.19 10.09 14.7 9 12 9ZM12 15C10.65 15 9.4 15.54 8.48 16.42L12 20L15.52 16.42C14.6 15.54 13.35 15 12 15Z"/>
-    </svg>
-    
-    <h1>Welcome to Guest Wi-Fi</h1>
-    <p>Please log in to get complimentary high-speed internet access.</p>
-
-    <form id="wifiForm">
-      <div class="form-group">
-        <label for="fullname">Full Name</label>
-        <input type="text" id="fullname" placeholder="John Doe" required>
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="john@example.com" required>
-      </div>
-
-      <div class="terms">
-        <input type="checkbox" id="terms" required>
-        <label for="terms" style="margin:0; font-weight:normal; text-transform:none;">I agree to the Terms of Service</label>
-      </div>
-
-      <button type="submit" class="btn-connect">Connect to Wi-Fi</button>
-    </form>
-
-    <div id="status" class="status-msg"></div>
+  <div id="address-bar">
+    <input type="text" id="url" placeholder="Enter URL (e.g. https://example.com)" />
+    <button id="go-btn">Go</button>
   </div>
+  <iframe id="browser-frame" src="about:blank"></iframe>
 
   <script>
-    document.getElementById('wifiForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    const urlInput = document.getElementById('url');
+    const goBtn = document.getElementById('go-btn');
+    const browserFrame = document.getElementById('browser-frame');
 
-      const name = document.getElementById('fullname').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const terms = document.getElementById('terms').checked;
-      const statusDiv = document.getElementById('status');
+    function navigate() {
+      let url = urlInput.value.trim();
+      if (!url) return;
 
-      if (name && email && terms) {
-        statusDiv.className = 'status-msg success';
-        statusDiv.textContent = 'Connecting... Please wait.';
+      // Add http:// if missing for convenience
+      if (!url.match(/^https?:\/\//)) {
+        url = 'http://' + url;
+      }
 
-        // Simulate captive portal gateway authorization
-        setTimeout(() => {
-          statusDiv.textContent = 'Success! Internet Access Granted.';
-        }, 2000);
-      } else {
-        statusDiv.className = 'status-msg error';
-        statusDiv.textContent = 'Please fill in all fields.';
+      browserFrame.src = url;
+    }
+
+    goBtn.addEventListener('click', navigate);
+    urlInput.addEventListener('keyup', function(event) {
+      if (event.key === 'Enter') {
+        navigate();
       }
     });
   </script>
-
 </body>
 </html>
